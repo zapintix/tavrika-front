@@ -26,10 +26,11 @@ function App() {
   const [showTableModal, setShowTableModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   
-  const [selectedDateTime, setSelectedDateTime] = useState<{date: string, time: string}>(() => {
-    const today = new Date().toISOString().split("T")[0];
-    return { date: today, time: "12:00" };
+  // Дата всегда есть (сегодня), но время изначально не выбрано
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    return new Date().toISOString().split("T")[0]; // Сегодняшняя дата
   });
+  const [selectedTime, setSelectedTime] = useState<string>(""); // Время не выбрано
   
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,13 +42,13 @@ function App() {
 
   const isTimeInPast = useCallback((date: string, time: string): boolean => {
     const now = new Date();
-    const selectedDate = new Date(date);
+    const selectedDateObj = new Date(date);
     
     const [hours, minutes] = time.split(':').map(Number);
     
-    selectedDate.setHours(hours, minutes, 0, 0);
+    selectedDateObj.setHours(hours, minutes, 0, 0);
     
-    return selectedDate < now;
+    return selectedDateObj < now;
   }, []);
 
   const getMinTimeForToday = useCallback((): string => {
@@ -66,11 +67,11 @@ function App() {
     return "12:00";
   }, []);
 
-  const availableTimes = useCallback(() => {
+  const availableTimes = useCallback((date: string) => {
     const times: string[] = [];
     const now = new Date();
     const today = now.toISOString().split("T")[0];
-    const isToday = selectedDateTime.date === today;
+    const isToday = date === today;
     
     for (let hour = 12; hour <= 22; hour++) {
       const timeString = `${hour.toString().padStart(2, "0")}:00`;
@@ -88,10 +89,14 @@ function App() {
     }
     
     return times;
-  }, [selectedDateTime.date]);
+  }, []);
 
-  const validateDateTime = useCallback((date: string, time: string): boolean => {
+  const validateTime = useCallback((date: string, time: string): boolean => {
     setTimeError("");
+    
+    if (!time) {
+      return false; // Время не выбрано - невалидно
+    }
     
     if (isTimeInPast(date, time)) {
       setTimeError("Выбранное время уже прошло. Пожалуйста, выберите актуальное время.");
@@ -147,9 +152,13 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!selectedDateTime.date || !selectedDateTime.time) return;
+    if (!selectedTime) {
+      // Если время не выбрано, очищаем список занятых столов
+      setReservedTableIds(new Set());
+      return;
+    }
     
-    if (!validateDateTime(selectedDateTime.date, selectedDateTime.time)) {
+    if (!validateTime(selectedDate, selectedTime)) {
       return;
     }
 
@@ -159,8 +168,8 @@ function App() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ 
-            date: selectedDateTime.date,
-            time: selectedDateTime.time 
+            date: selectedDate,
+            time: selectedTime 
           })
         });
         
@@ -183,23 +192,26 @@ function App() {
     };
 
     fetchReservedTables();
-  }, [selectedDateTime.date, selectedDateTime.time, validateDateTime]);
+  }, [selectedDate, selectedTime, validateTime]);
 
   useEffect(() => {
     if (sections.length === 0) return;
     
     const allTables = sections.flatMap(section => section.tables);
     
-    const availableTables = allTables.filter(table => 
-      !reservedTableIds.has(table.id) && table.number < 100
-    );
+    // Если время не выбрано, показываем все столы (без фильтрации)
+    const availableTables = selectedTime 
+      ? allTables.filter(table => 
+          !reservedTableIds.has(table.id) && table.number < 100
+        )
+      : allTables; // Показываем все столы, когда время не выбрано
     
     console.log("Всего столов:", allTables.length);
     console.log("Занятые столы:", reservedTableIds.size);
     console.log("Доступные столы:", availableTables.length);
     
     setFilteredTables(availableTables);
-  }, [sections, reservedTableIds]);
+  }, [sections, reservedTableIds, selectedTime]);
 
   useEffect(() => {
     let mounted = true;
@@ -263,29 +275,40 @@ function App() {
     };
   }, [loadMockData]);
 
-  const handleDateTimeChange = useCallback((date: string, time: string) => {
-    // Проверяем валидность перед установкой
-    if (validateDateTime(date, time)) {
-      setSelectedDateTime({ date, time });
+  const handleDateChange = useCallback((newDate: string) => {
+    setSelectedDate(newDate);
+    
+    // Если время было выбрано, проверяем его валидность для новой даты
+    if (selectedTime) {
+      validateTime(newDate, selectedTime);
     } else {
-      // Если время невалидно, все равно обновляем, но показываем ошибку
-      setSelectedDateTime({ date, time });
+      // Если время не выбрано, очищаем ошибку
+      setTimeError("");
     }
-  }, [validateDateTime]);
+  }, [selectedTime, validateTime]);
+
+  const handleTimeSelect = useCallback((time: string) => {
+    setSelectedTime(time);
+    validateTime(selectedDate, time);
+  }, [selectedDate, validateTime]);
 
   const handleSelectTableClick = useCallback(() => {
+    if (!selectedTime) {
+      alert("Пожалуйста, выберите время бронирования.");
+      return;
+    }
+    
+    if (!validateTime(selectedDate, selectedTime)) {
+      return;
+    }
+    
     if (filteredTables.length === 0) {
       alert("На выбранное время нет свободных столов. Пожалуйста, выберите другое время.");
       return;
     }
     
-    // Дополнительная проверка перед открытием модалки
-    if (!validateDateTime(selectedDateTime.date, selectedDateTime.time)) {
-      return;
-    }
-    
     setShowTableModal(true);
-  }, [filteredTables.length, selectedDateTime.date, selectedDateTime.time, validateDateTime]);
+  }, [selectedTime, selectedDate, filteredTables.length, validateTime]);
 
   const handleTableSelect = useCallback((table: Table) => {
     setSelectedTable(table);
@@ -294,10 +317,10 @@ function App() {
   }, []);
 
   const handleReservationConfirm = useCallback(() => {
-    if (!selectedTable || !selectedDateTime) return;
+    if (!selectedTable || !selectedTime) return;
     
     // Финальная проверка перед отправкой
-    if (!validateDateTime(selectedDateTime.date, selectedDateTime.time)) {
+    if (!validateTime(selectedDate, selectedTime)) {
       setShowConfirmModal(false);
       return;
     }
@@ -306,7 +329,7 @@ function App() {
     setShowConfirmModal(false);
 
     if (!tg) {
-      alert(`Бронь создана!\nСтол: ${selectedTable.number}\nВремя: ${selectedDateTime.time}\nДата: ${selectedDateTime.date}`);
+      alert(`Бронь создана!\nСтол: ${selectedTable.number}\nВремя: ${selectedTime}\nДата: ${selectedDate}`);
       return;
     }
 
@@ -315,8 +338,8 @@ function App() {
       action: "create_reservation",
       tableId: selectedTable.id,         
       tableNumber: selectedTable.number, 
-      time: selectedDateTime.time,
-      date: selectedDateTime.date,
+      time: selectedTime,
+      date: selectedDate,
       userId: tg.initDataUnsafe?.user?.id,
       userName: tg.initDataUnsafe?.user?.first_name 
                 || tg.initDataUnsafe?.user?.username,
@@ -341,7 +364,7 @@ function App() {
       console.error("Ошибка отправки данных:", error);
       alert("Ошибка отправки данных бронирования.");
     }
-  }, [selectedTable, selectedDateTime, validateDateTime]);
+  }, [selectedTable, selectedDate, selectedTime, validateTime]);
 
   const handleTableModalClose = useCallback(() => {
     setShowTableModal(false);
@@ -365,6 +388,8 @@ function App() {
       </div>
     );
   }
+
+  const today = new Date().toISOString().split("T")[0];
 
   return (
     <div style={{ 
@@ -408,32 +433,14 @@ function App() {
           </label>
           <input
             type="date"
-            value={selectedDateTime.date}
-            onChange={(e) => {
-              const newDate = e.target.value;
-              // При смене даты автоматически проверяем время
-              const isValid = validateDateTime(newDate, selectedDateTime.time);
-              if (!isValid) {
-                // Если время невалидно для новой даты, сбрасываем на первое доступное
-                const today = new Date().toISOString().split("T")[0];
-                const isToday = newDate === today;
-                
-                if (isToday) {
-                  const minTime = getMinTimeForToday();
-                  setSelectedDateTime({ date: newDate, time: minTime });
-                } else {
-                  setSelectedDateTime({ date: newDate, time: "12:00" });
-                }
-              } else {
-                setSelectedDateTime({ date: newDate, time: selectedDateTime.time });
-              }
-            }}
-            min={new Date().toISOString().split("T")[0]}
+            value={selectedDate}
+            onChange={(e) => handleDateChange(e.target.value)}
+            min={today}
             style={{
               width: "95%", 
               padding: "12px 10px", 
               borderRadius: "10px",
-              border: timeError ? "1px solid #ef4444" : "1px solid #475569", 
+              border: "1px solid #475569", 
               backgroundColor: "#1e293b", 
               color: "#fff", 
               fontSize: "16px", 
@@ -452,7 +459,7 @@ function App() {
             fontSize: "14px", 
             fontWeight: "500" 
           }}>
-            Время
+            Время {selectedDate && `(${selectedDate})`}
           </label>
           
           {/* Сообщение об ошибке времени */}
@@ -482,25 +489,21 @@ function App() {
             paddingRight: "5px",
             paddingBottom: "25px",
           }}>
-            {availableTimes().map((t) => {
-              const isSelected = selectedDateTime.time === t;
-              const isPast = isTimeInPast(selectedDateTime.date, t);
+            {availableTimes(selectedDate).map((t) => {
+              const isSelected = selectedTime === t;
               
               return (
                 <button
                   key={t}
                   type="button"
-                  disabled={isPast}
-                  onClick={() => handleDateTimeChange(selectedDateTime.date, t)}
+                  onClick={() => handleTimeSelect(t)}
                   style={{
                     padding: "14px 10px",
                     borderRadius: "10px",
                     border: isSelected ? "2px solid #3b82f6" : "1px solid #475569",
-                    background: isPast ? "rgba(100, 116, 139, 0.2)" : 
-                              isSelected ? "rgba(59,130,246,0.1)" : "transparent",
-                    color: isPast ? "#64748b" : 
-                          isSelected ? "#3b82f6" : "#94a3b8",
-                    cursor: isPast ? "not-allowed" : "pointer",
+                    background: isSelected ? "rgba(59,130,246,0.1)" : "transparent",
+                    color: isSelected ? "#3b82f6" : "#94a3b8",
+                    cursor: "pointer",
                     fontSize: "15px",
                     transition: "all 0.2s",
                     fontWeight: isSelected ? "600" : "400",
@@ -508,32 +511,19 @@ function App() {
                     overflow: "hidden"
                   }}
                   onMouseEnter={(e) => {
-                    if (!isPast && !isSelected) {
+                    if (!isSelected) {
                       e.currentTarget.style.backgroundColor = "rgba(71, 85, 105, 0.2)";
                       e.currentTarget.style.color = "#cbd5e1";
                     }
                   }}
                   onMouseLeave={(e) => {
-                    if (!isPast && !isSelected) {
+                    if (!isSelected) {
                       e.currentTarget.style.backgroundColor = "transparent";
                       e.currentTarget.style.color = "#94a3b8";
                     }
                   }}
                 >
                   {t}
-                  {isPast && (
-                    <div style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      backgroundColor: "rgba(0, 0, 0, 0.3)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center"
-                    }}></div>
-                  )}
                 </button>
               );
             })}
@@ -547,8 +537,9 @@ function App() {
             textAlign: "center"
           }}>
             {(() => {
-              const today = new Date().toISOString().split("T")[0];
-              const isToday = selectedDateTime.date === today;
+              const now = new Date();
+              const today = now.toISOString().split("T")[0];
+              const isToday = selectedDate === today;
               
               if (isToday) {
                 const minTime = getMinTimeForToday();
@@ -563,10 +554,10 @@ function App() {
         <div style={{
           marginBottom: "25px",
           padding: "12px 16px",
-          backgroundColor: reservedTableIds.size > 0 ? "rgba(30, 41, 59, 0.5)" : "rgba(30, 41, 59, 0.5)",
+          backgroundColor: "rgba(30, 41, 59, 0.5)",
           borderRadius: "10px",
           border: "1px solid rgba(255,255,255,0.1)",
-          opacity: timeError ? 0.5 : 1
+          opacity: selectedTime ? 1 : 0.7
         }}>
           <div style={{
             display: "flex",
@@ -576,22 +567,26 @@ function App() {
           }}>
             <span style={{ color: "#cbd5e1", fontSize: "14px" }}>Свободных столов:</span>
             <span style={{ 
-              color: timeError ? "#94a3b8" : 
+              color: !selectedTime ? "#94a3b8" :
+                     timeError ? "#94a3b8" : 
                      filteredTables.length > 0 ? "#10b981" : "#ef4444",
               fontSize: "16px",
               fontWeight: "600"
             }}>
-              {timeError ? "—" : filteredTables.length}
+              {!selectedTime ? "—" :
+               timeError ? "—" : filteredTables.length}
             </span>
           </div>
           <div style={{ 
-            color: timeError ? "#64748b" : "#94a3b8", 
+            color: !selectedTime ? "#64748b" : 
+                   timeError ? "#64748b" : "#94a3b8", 
             fontSize: "12px" 
           }}>
-            {timeError ? "Выберите актуальное время" : 
+            {!selectedTime ? "Выберите время для просмотра доступности" :
+             timeError ? "Выберите актуальное время" : 
              filteredTables.length > 0 
-              ? `На ${selectedDateTime.time} доступно ${filteredTables.length} столов`
-              : `На ${selectedDateTime.time} все столы заняты`}
+              ? `На ${selectedTime} доступно ${filteredTables.length} столов`
+              : `На ${selectedTime} все столы заняты`}
           </div>
         </div>
 
@@ -599,40 +594,43 @@ function App() {
         <div style={{ textAlign: "center" }}>
           <button 
             onClick={handleSelectTableClick}
-            disabled={filteredTables.length === 0 || !!timeError}
+            disabled={!selectedTime || filteredTables.length === 0 || !!timeError}
             style={{
               padding: "16px 40px",
               borderRadius: "12px",
               border: "none",
-              background: timeError ? "linear-gradient(135deg, #475569, #334155)" :
+              background: !selectedTime ? "linear-gradient(135deg, #475569, #334155)" :
+                       timeError ? "linear-gradient(135deg, #475569, #334155)" :
                        filteredTables.length === 0 
                 ? "linear-gradient(135deg, #475569, #334155)" 
                 : "linear-gradient(135deg, #3b82f6, #1d4ed8)",
               color: "#fff",
               fontSize: "16px",
               fontWeight: "600",
-              cursor: (filteredTables.length === 0 || timeError) ? "not-allowed" : "pointer",
+              cursor: (!selectedTime || filteredTables.length === 0 || timeError) 
+                ? "not-allowed" : "pointer",
               transition: "all 0.2s",
               width: "100%",
               maxWidth: "300px",
-              opacity: (filteredTables.length === 0 || timeError) ? 0.6 : 1
+              opacity: (!selectedTime || filteredTables.length === 0 || timeError) ? 0.6 : 1
             }}
             onMouseEnter={(e) => {
-              if (filteredTables.length > 0 && !timeError) {
+              if (selectedTime && filteredTables.length > 0 && !timeError) {
                 e.currentTarget.style.opacity = "0.9";
                 e.currentTarget.style.transform = "translateY(-2px)";
                 e.currentTarget.style.boxShadow = "0 8px 20px rgba(59, 130, 246, 0.3)";
               }
             }}
             onMouseLeave={(e) => {
-              if (filteredTables.length > 0 && !timeError) {
+              if (selectedTime && filteredTables.length > 0 && !timeError) {
                 e.currentTarget.style.opacity = "1";
                 e.currentTarget.style.transform = "translateY(0)";
                 e.currentTarget.style.boxShadow = "none";
               }
             }}
           >
-            {timeError ? "Выберите актуальное время" :
+            {!selectedTime ? "Выберите время" :
+             timeError ? "Выберите актуальное время" :
              filteredTables.length === 0 ? "Нет свободных столов" : "Выбрать стол"}
           </button>
         </div>
@@ -647,11 +645,11 @@ function App() {
         />
       )}
 
-      {showConfirmModal && selectedTable && selectedDateTime && (
+      {showConfirmModal && selectedTable && selectedTime && (
         <ConfirmModal
           tableNumber={selectedTable.number}
-          date={selectedDateTime.date}
-          time={selectedDateTime.time}
+          date={selectedDate}
+          time={selectedTime}
           onConfirm={handleReservationConfirm}
           onClose={handleConfirmClose}
         />
