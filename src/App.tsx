@@ -155,7 +155,7 @@ function App() {
 
     const fetchReservedTables = async () => {
       try {
-        const res = await fetch(`https://hgq64vxn-8000.euw.devtunnels.ms/api/reservations/table`, {
+        const res = await fetch(`https://tavrika-back.onrender.com/api/reservations/table`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ 
