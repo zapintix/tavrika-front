@@ -6,6 +6,7 @@ export interface Table {
   y: number | null;
   width: number | null;
   height: number | null;
+  borderRadius: number | null;
 }
 
 export interface Section {

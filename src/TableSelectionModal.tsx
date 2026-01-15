@@ -42,6 +42,7 @@ export default function TableSelectionModal({
       bottom: number;
       width: number;
       height: number;
+      borderRadius: number;
       isAvailable: boolean;
     }> = [];
 
@@ -58,19 +59,53 @@ export default function TableSelectionModal({
 
         let newX = table.y;
         let newY = maxX - (table.x + table.width);
+        let widthPercent = (table.width / maxX) * 100 * 0.5;
+        let heightPercent = (table.height / maxY) * 100 * SIZE;
+        let borderRadius = table.borderRadius ?? 6;
 
+        //-----------------HARD-CODE-----------------------
         if (table.number === 8) {
           newY += 50;
+          heightPercent = 25.6;
         }
 
         if (table.number === 2) {
-          newX -= 75;
+          newX -= 75
+          newY -= 50;
+          heightPercent = 20.6
+          widthPercent = 16.47
+          borderRadius = 33
         }
+        
+        if (table.number === 1) {
+          heightPercent = 23.6
+        }
+
+        if (table.number === 12) {
+          newY -= 50;
+        }
+
+        if (table.number === 7) {
+          newY += 50;
+          newX += 52;
+          heightPercent = 19
+        }
+
+        if (table.number === 6) {
+          newY += 50;
+          newX -= 190;
+          heightPercent = 19
+        }
+
+        if ([3, 4, 5].includes(table.number)) {
+          widthPercent = 8
+          newY += 50;
+        }
+        
+        //-------------------------------------------------
 
         const leftPercent = ((newX / maxY) * 100);
         const bottomPercent = (newY / maxX) * 100;
-        const widthPercent = (table.width / maxX) * 100 * 0.5;
-        const heightPercent = (table.height / maxY) * 100 * SIZE;
 
         result.push({
           table,
@@ -78,7 +113,8 @@ export default function TableSelectionModal({
           bottom: bottomPercent,
           width: heightPercent,  
           height: widthPercent,
-          isAvailable
+          isAvailable,
+          borderRadius: borderRadius,
         });
       });
     });
@@ -205,7 +241,7 @@ export default function TableSelectionModal({
             }}
           >
             {/* Занятые столы (серые) */}
-            {unavailableTables.map(({ table, left, bottom, width, height }) => (
+            {unavailableTables.map(({ table, left, bottom, width, height, borderRadius }) => (
               <div
                 key={table.id}
                 style={{
@@ -217,22 +253,25 @@ export default function TableSelectionModal({
                   backgroundColor: "rgb(97 17 17 / 91%)",
                   
                   border: "2px solid #475569",
-                  borderRadius: "6px",
+                  borderRadius: borderRadius ? `${borderRadius}px` : "6px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   fontSize: "12px",
                   fontWeight: "bold",
-                  color: "rgba(255, 255, 255, 0.5)",
+                  color: "white",
                   zIndex: 5
                 }}
               >
-                <span style={{ fontSize: "10px" }}>{table.number}</span>
+                <span style={{ 
+                  fontSize: "12px",
+                  fontWeight: "bold"
+                }}>{table.number}</span>
               </div>
             ))}
 
             {/* Доступные столы (интерактивные) */}
-            {availableTables.map(({ table, left, bottom, width, height }) => (
+            {availableTables.map(({ table, left, bottom, width, height, borderRadius }) => (
               <button
                 key={table.id}
                 onClick={() => onTableSelect(table)}
@@ -244,7 +283,7 @@ export default function TableSelectionModal({
                   height: `${height}%`,
                   backgroundColor: "#2d3748",
                   border: "2px solid #4a5568",
-                  borderRadius: "6px",
+                  borderRadius: borderRadius ? `${borderRadius}px` : "6px",
                   color: "white",
                   cursor: "pointer",
                   display: "flex",
@@ -300,7 +339,27 @@ export default function TableSelectionModal({
 
             <div style={{
               position: "absolute",
-              left: "21%",
+              left: "65%",
+              bottom: "25%",
+              width: "33%",
+              height: "40%",
+              backgroundColor: "rgba(26, 64, 102, 1)",
+              border: "2px solid #4a5568",
+              borderRadius: "6px",
+              color: "white",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "10px",
+              fontWeight: "bold",
+              zIndex: 10
+            }}>
+              
+            </div>
+
+            <div style={{
+              position: "absolute",
+              left: "35%",
               bottom: "90%",
               width: "30%",
               height: "19%",

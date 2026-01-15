@@ -2,11 +2,13 @@ interface ConfirmModalProps {
   tableNumber: number;
   date: string;
   time: string;
+  guests: number;
   onConfirm: () => void;
   onClose: () => void;
 }
 
-export default function ConfirmModal({ tableNumber, date, time, onConfirm, onClose }: ConfirmModalProps) {
+
+export default function ConfirmModal({ tableNumber, guests, date, time, onConfirm, onClose }: ConfirmModalProps) {
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) onClose();
   };
@@ -68,6 +70,9 @@ export default function ConfirmModal({ tableNumber, date, time, onConfirm, onClo
           }}>
             <div style={{ fontSize: "48px", color: "#3b82f6", marginBottom: "10px" }}>
               Стол №{tableNumber}
+            </div>
+            <div style={{ fontSize: "18px", color: "#cbd5e1", marginBottom: "5px" }}>
+              Кол-во гостей: {guests}
             </div>
             <div style={{ fontSize: "18px", color: "#cbd5e1", marginBottom: "5px" }}>
               {date}
