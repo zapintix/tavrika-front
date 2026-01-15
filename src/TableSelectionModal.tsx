@@ -78,6 +78,7 @@ export default function TableSelectionModal({
         }
         
         if (table.number === 1) {
+          newY += 10;
           heightPercent = 23.6
         }
 

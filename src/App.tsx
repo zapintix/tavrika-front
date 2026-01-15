@@ -411,7 +411,8 @@ function App() {
       background: "#0d1117", 
       color: "#fff",
       padding: "20px 20px 0px 20px",
-      minHeight: "100vh"
+      minHeight: "100vh",
+      boxSizing: "border-box"
     }}>
       <div style={{
         background: "linear-gradient(145deg, #1e293b, #0f172a)",
