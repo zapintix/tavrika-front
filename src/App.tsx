@@ -30,7 +30,6 @@ function App() {
   const [showGuestModal, setShowGuestModal] = useState(false);
 
   
-  // Дата всегда есть (сегодня), но время изначально не выбрано
   const [selectedDate, setSelectedDate] = useState<string>(() => {
     return new Date().toISOString().split("T")[0]; // Сегодняшняя дата
   });
@@ -56,69 +55,109 @@ function App() {
   }, []);
 
   const getMinTimeForToday = useCallback((): string => {
-    const now = new Date();
-    const currentHour = now.getHours();
-    
-    if (currentHour >= 22) {
-      return "12:00";
-    }
-    
-    if (currentHour >= 12) {
-      const nextHour = currentHour + 1;
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+  const day = now.getDay();
+  const isWeekend = day === 0 || day === 6;
+  
+  // Минимальный час в зависимости от дня недели
+  const startHour = isWeekend ? 10 : 11;
+  const endHour = isWeekend ? 21 : 22;
+  
+  // Если текущий час меньше времени открытия
+  if (currentHour < startHour) {
+    return `${startHour.toString().padStart(2, "0")}:00`;
+  }
+  
+  // Если уже позже времени закрытия
+  if (currentHour >= endHour) {
+    return "завтра";
+  }
+  
+  // Если текущий час доступен для бронирования, минимальное время - текущий час + 1 минута
+  const nextMinute = currentMinute + 1;
+  if (nextMinute < 60) {
+    return `${currentHour.toString().padStart(2, "0")}:${nextMinute.toString().padStart(2, "0")}`;
+  } else {
+    // Если следующая минута переходит на следующий час
+    const nextHour = currentHour + 1;
+    if (nextHour <= endHour) {
       return `${nextHour.toString().padStart(2, "0")}:00`;
+    } else {
+      return "завтра";
     }
-    
-    return "12:00";
-  }, []);
+  }
+}, []);
 
-  const availableTimes = useCallback((date: string) => {
-    const times: string[] = [];
+  
+
+  const getAvailableMinutes = useCallback((date: string, hour: number): number[] => {
     const now = new Date();
     const today = now.toISOString().split("T")[0];
     const isToday = date === today;
     
-    for (let hour = 12; hour <= 22; hour++) {
-      const timeString = `${hour.toString().padStart(2, "0")}:00`;
-      
-      if (isToday) {
-        if (hour < now.getHours()) {
-          continue; 
-        }
-        if (hour === now.getHours() && now.getMinutes() > 0) {
-          continue;
+    const minutes = [];
+    
+    if (isToday && hour === now.getHours()) {
+      // Если выбрали текущий час, показываем только минуты от текущей+1 до 59
+      for (let minute = 0; minute <= 59; minute++) {
+        if (minute > now.getMinutes()) {
+          minutes.push(minute);
         }
       }
-      
-      times.push(timeString);
+    } else {
+      // Для других часов показываем все минуты от 00 до 59
+      for (let minute = 0; minute <= 59; minute++) {
+        minutes.push(minute);
+      }
     }
     
-    return times;
+    return minutes;
   }, []);
+
+  const getAvailableHours = useCallback((date: string): number[] => {
+  const now = new Date();
+  const today = now.toISOString().split("T")[0];
+  const isToday = date === today;
+  const dateObj = new Date(date); 
+  const day = dateObj.getDay();
+  const isWeekend = day === 0 || day === 6;
+
+  const hours: number[] = [];
+
+  let startHour = isWeekend ? 10 : 11;
+  let endHour = isWeekend ? 21 : 22;
+
+  for (let hour = startHour; hour < endHour; hour++) {
+    if (isToday) {
+      if (hour < now.getHours()) {
+        continue; 
+      }
+      // Для текущего часа нужно проверить, есть ли доступные минуты
+      if (hour === now.getHours()) {
+        const availableMinutes = getAvailableMinutes(date, hour);
+        if (availableMinutes.length === 0) {
+          continue; // Если нет доступных минут для этого часа, пропускаем его
+        }
+      }
+    }
+    hours.push(hour);
+  }
+  
+  return hours;
+}, [getAvailableMinutes]);
 
   const validateTime = useCallback((date: string, time: string): boolean => {
     setTimeError("");
     
     if (!time) {
-      return false; // Время не выбрано - невалидно
+      return false; 
     }
     
     if (isTimeInPast(date, time)) {
       setTimeError("Выбранное время уже прошло. Пожалуйста, выберите актуальное время.");
       return false;
-    }
-    
-    const now = new Date();
-    const today = now.toISOString().split("T")[0];
-    
-    if (date === today) {
-      const minTime = getMinTimeForToday();
-      const [minHour] = minTime.split(':').map(Number);
-      const [selectedHour] = time.split(':').map(Number);
-      
-      if (selectedHour < minHour) {
-        setTimeError(`Сегодня можно бронировать только с ${minTime}. Пожалуйста, выберите другое время.`);
-        return false;
-      }
     }
     
     return true;
@@ -281,8 +320,6 @@ function App() {
 
   const handleDateChange = useCallback((newDate: string) => {
     setSelectedDate(newDate);
-
-  
     
     // Если время было выбрано, проверяем его валидность для новой даты
     if (selectedTime) {
@@ -299,9 +336,11 @@ function App() {
     setShowConfirmModal(true);
   }, []);
 
-  const handleTimeSelect = useCallback((time: string) => {
-    setSelectedTime(time);
-    validateTime(selectedDate, time);
+  // Функция для выбора времени (часа и минуты)
+  const handleTimeSelect = useCallback((hour: number, minute: number) => {
+    const timeString = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
+    setSelectedTime(timeString);
+    validateTime(selectedDate, timeString);
   }, [selectedDate, validateTime]);
 
   const handleSelectTableClick = useCallback(() => {
@@ -327,7 +366,7 @@ function App() {
     setShowTableModal(false);
     setGuestCount(null);
     setShowGuestModal(true);
-}, []);
+  }, []);
 
 
   const handleReservationConfirm = useCallback(() => {
@@ -405,6 +444,9 @@ function App() {
   }
 
   const today = new Date().toISOString().split("T")[0];
+  const availableHours = getAvailableHours(selectedDate);
+  const currentHour = selectedTime ? parseInt(selectedTime.split(':')[0]) : null;
+  const availableMinutes = currentHour ? getAvailableMinutes(selectedDate, currentHour) : Array.from({ length: 60 }, (_, i) => i);
 
   return (
     <div style={{ 
@@ -437,7 +479,7 @@ function App() {
         </h2>
 
         {/* Выбор даты */}
-        <div style={{ marginBottom: "25px" }}>
+        <div style={{ marginBottom: "25px", display: "flex", flexDirection: "column"}}>
           <label style={{ 
             display: "block", 
             marginBottom: "10px", 
@@ -453,7 +495,6 @@ function App() {
             onChange={(e) => handleDateChange(e.target.value)}
             min={today}
             style={{
-              width: "95%", 
               padding: "12px 10px", 
               borderRadius: "10px",
               border: "1px solid #475569", 
@@ -497,71 +538,167 @@ function App() {
             </div>
           )}
           
+          {/* Двойной пикер для часов и минут */}
           <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "10px",
-            maxHeight: "220px",
-            paddingRight: "5px",
-            paddingBottom: "25px",
+            display: "flex",
+            alignItems: "center",
+            borderRadius: "10px",
+            border: "1px solid #475569", 
+            padding: "15px 0",
+            marginBottom: "10px"
           }}>
-            {availableTimes(selectedDate).map((t) => {
-              const isSelected = selectedTime === t;
-              
-              return (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => handleTimeSelect(t)}
-                  style={{
-                    padding: "14px 10px",
-                    borderRadius: "10px",
-                    border: isSelected ? "2px solid #3b82f6" : "1px solid #475569",
-                    background: isSelected ? "rgba(59,130,246,0.1)" : "transparent",
-                    color: isSelected ? "#3b82f6" : "#94a3b8",
-                    cursor: "pointer",
-                    fontSize: "15px",
-                    transition: "all 0.2s",
-                    fontWeight: isSelected ? "600" : "400",
-                    position: "relative",
-                    overflow: "hidden"
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isSelected) {
-                      e.currentTarget.style.backgroundColor = "rgba(71, 85, 105, 0.2)";
-                      e.currentTarget.style.color = "#cbd5e1";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isSelected) {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                      e.currentTarget.style.color = "#94a3b8";
-                    }
-                  }}
-                >
-                  {t}
-                </button>
-              );
-            })}
+            {/* Часы */}
+            <div style={{
+              flex: 1,
+              textAlign: "center",
+              borderRight: "1px solid #334155"
+            }}>
+              <div style={{
+                fontSize: "12px",
+                color: "#94a3b8",
+                marginBottom: "10px"
+              }}>
+                Часы
+              </div>
+              <div style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                maxHeight: "120px",
+                overflowY: "auto",
+              }}>
+                {availableHours.map(hour => {
+                  const [currentHour] = selectedTime.split(':').map(Number);
+                  const isSelected = currentHour === hour;
+                  
+                  return (
+                    <div
+                      key={hour}
+                      onClick={() => {
+                        const minute = selectedTime ? parseInt(selectedTime.split(':')[1]) : 0;
+                        // Проверяем, доступна ли выбранная минута для этого часа
+                        const minutesForThisHour = getAvailableMinutes(selectedDate, hour);
+                        const validMinute = minutesForThisHour.includes(minute) ? minute : (minutesForThisHour.length > 0 ? minutesForThisHour[0] : 0);
+                        handleTimeSelect(hour, validMinute);
+                      }}
+                      style={{
+                        width: "50px",
+                        height: "40px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderRadius: "8px",
+                        fontSize: "18px",
+                        fontWeight: isSelected ? "600" : "400",
+                        color: isSelected ? "#3b82f6" : "#94a3b8",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                        backgroundColor: isSelected ? "rgba(59, 130, 246, 0.1)" : "transparent",
+                        border: isSelected ? "1px solid rgba(59, 130, 246, 0.3)" : "1px solid transparent",
+                        minHeight: "40px"
+                      }}
+                    >
+                      {hour.toString().padStart(2, "0")}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Двоеточие */}
+            <div style={{
+              fontSize: "20px",
+              color: "#3b82f6",
+              fontWeight: "600",
+              padding: "0 10px"
+            }}>
+              :
+            </div>
+
+            {/* Минуты */}
+            <div style={{
+              flex: 1,
+              textAlign: "center",
+              borderLeft: "1px solid #334155"
+            }}>
+              <div style={{
+                fontSize: "12px",
+                color: "#94a3b8",
+                marginBottom: "10px"
+              }}>
+                Минуты
+              </div>
+              <div style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "0px",
+                maxHeight: "120px",
+                overflowY: "auto",
+                paddingLeft: "5px"
+              }}>
+                {availableMinutes.map(minute => {
+                  const [, currentMinute] = selectedTime.split(':').map(Number);
+                  const isSelected = currentMinute === minute;
+                  
+                  return (
+                    <div
+                      key={minute}
+                      onClick={() => {
+                        const hour = selectedTime ? parseInt(selectedTime.split(':')[0]) : (availableHours.length > 0 ? availableHours[0] : 12);
+                        handleTimeSelect(hour, minute);
+                      }}
+                      style={{
+                        width: "50px",
+                        height: "40px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderRadius: "8px",
+                        fontSize: "18px",
+                        fontWeight: isSelected ? "600" : "400",
+                        color: isSelected ? "#3b82f6" : "#94a3b8",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                        backgroundColor: isSelected ? "rgba(59, 130, 246, 0.1)" : "transparent",
+                        border: isSelected ? "1px solid rgba(59, 130, 246, 0.3)" : "1px solid transparent",
+                        minHeight: "40px"
+                      }}
+                    >
+                      {minute.toString().padStart(2, "0")}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
+
+          {/* Скрытие стандартного скролла для WebKit браузеров */}
+          <style>
+            {`
+              div::-webkit-scrollbar {
+                display: none;
+              }
+            `}
+          </style>
           
           {/* Подсказка о доступном времени */}
           <div style={{
-            marginTop: "-15px",
+            marginTop: "5px",
             fontSize: "12px",
             color: "#64748b",
             textAlign: "center"
           }}>
             {(() => {
-              const now = new Date();
-              const today = now.toISOString().split("T")[0];
-              const isToday = selectedDate === today;
-              
-              if (isToday) {
-                const minTime = getMinTimeForToday();
-                return `Сегодня можно бронировать с ${minTime}`;
+              const date = new Date(selectedDate)
+              const day = date.getDay();
+              const isWeekend = day === 0 || day === 6;
+
+              if (isWeekend){
+                return "Рабочее время: с 10:00 до 21:00";
               }
-              return "Рабочее время: с 12:00 до 22:00";
+              
+              return "Рабочее время: с 11:00 до 22:00";
             })()}
           </div>
         </div>

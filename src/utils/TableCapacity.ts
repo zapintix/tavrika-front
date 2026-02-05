@@ -3,12 +3,16 @@ export function getGuestLimits(tableNumber: number):{min:number; max:number}{
     return { min: 1, max: 8 };
   }
 
-  if (tableNumber >= 9 && tableNumber <= 13) {
-    return { min: 1, max: 2 };
+  if (tableNumber >= 9 && tableNumber <= 11) {
+    return { min: 1, max: 3 };
   }
 
   if (tableNumber >= 3 && tableNumber <= 7) {
     return { min: 1, max: 4 };
+  }
+
+  if (tableNumber > 2 && tableNumber <= 13) {
+    return { min: 1, max: 2 };
   }
 
   if (tableNumber === 2) {

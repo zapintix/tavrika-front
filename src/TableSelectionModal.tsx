@@ -1,5 +1,7 @@
 import { useRef, useMemo } from "react";
 import type { Table, Section } from "./types/table";
+import { getGuestLimits } from "./utils/TableCapacity";
+
 interface Props {
   sections: Section[];
   filteredTableIds: string[]; // ID доступных столов
@@ -44,6 +46,11 @@ export default function TableSelectionModal({
       height: number;
       borderRadius: number;
       isAvailable: boolean;
+      limits: {
+        min: number;
+        max: number;
+      };
+      
     }> = [];
 
     sections.forEach((section) => {
@@ -86,6 +93,11 @@ export default function TableSelectionModal({
           newY -= 50;
         }
 
+        if (table.number === 13) {
+          newX += 110;
+          newY += 10;
+        }
+
         if (table.number === 7) {
           newY += 50;
           newX += 52;
@@ -93,8 +105,8 @@ export default function TableSelectionModal({
         }
 
         if (table.number === 6) {
-          newY += 50;
-          newX -= 190;
+          newY += 45;
+          newX -= 45;
           heightPercent = 19
         }
 
@@ -107,6 +119,7 @@ export default function TableSelectionModal({
 
         const leftPercent = ((newX / maxY) * 100);
         const bottomPercent = (newY / maxX) * 100;
+        const limits = getGuestLimits(table.number);
 
         result.push({
           table,
@@ -116,6 +129,7 @@ export default function TableSelectionModal({
           height: widthPercent,
           isAvailable,
           borderRadius: borderRadius,
+          limits
         });
       });
     });
@@ -242,7 +256,7 @@ export default function TableSelectionModal({
             }}
           >
             {/* Занятые столы (серые) */}
-            {unavailableTables.map(({ table, left, bottom, width, height, borderRadius }) => (
+            {unavailableTables.map(({ table, left, bottom, width, height, borderRadius, limits }) => (
               <div
                 key={table.id}
                 style={{
@@ -267,12 +281,12 @@ export default function TableSelectionModal({
                 <span style={{ 
                   fontSize: "12px",
                   fontWeight: "bold"
-                }}>{table.number}</span>
+                }}>{limits.max} чел.</span>
               </div>
             ))}
 
             {/* Доступные столы (интерактивные) */}
-            {availableTables.map(({ table, left, bottom, width, height, borderRadius }) => (
+            {availableTables.map(({ table, left, bottom, width, height, borderRadius, limits }) => (
               <button
                 key={table.id}
                 onClick={() => onTableSelect(table)}
@@ -312,7 +326,7 @@ export default function TableSelectionModal({
                   fontSize: "12px",
                   fontWeight: "bold"
                 }}>
-                  {table.number}
+                  {limits.min}-{limits.max} чел.
                 </span>
               </button>
             ))}
