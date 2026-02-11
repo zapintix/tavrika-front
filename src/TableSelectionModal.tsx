@@ -114,7 +114,11 @@ export default function TableSelectionModal({
           widthPercent = 8
           newY += 50;
         }
-        
+
+        if (table.number >= 9 && table.number <= 13) {
+          heightPercent = 14
+        }
+
         //-------------------------------------------------
 
         const leftPercent = ((newX / maxY) * 100);
@@ -326,7 +330,7 @@ export default function TableSelectionModal({
                   fontSize: "12px",
                   fontWeight: "bold"
                 }}>
-                  {limits.min}-{limits.max} чел.
+                  {limits.max} чел.
                 </span>
               </button>
             ))}
