@@ -207,7 +207,7 @@ function App() {
 
     const fetchReservedTables = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL||"http://10.10.36.35:8103"}/api/reservations/table`, {
+        const res = await fetch('http://10.10.36.35:8103/api/reservations/table', {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ 
