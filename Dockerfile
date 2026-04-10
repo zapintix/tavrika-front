@@ -14,4 +14,4 @@ COPY . .
 RUN pnpm build
 
 EXPOSE 8000
-CMD ["pnpm","start"]
+CMD ["pnpm","run","serve"]
