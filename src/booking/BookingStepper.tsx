@@ -22,27 +22,7 @@ import {
   validateGuestInfo,
 } from "./utils";
 
-function buildApiUrl(path: string) {
-  if (/^https?:\/\//i.test(path)) {
-    return path;
-  }
-
-  const rawBaseUrl = String(import.meta.env.VITE_API_BASE_URL ?? "").trim().replace(/^['"]|['"]$/g, "");
-  const normalizedBaseUrl = rawBaseUrl.replace(/^\/+(?=https?:\/\/)/i, "");
-
-  if (!normalizedBaseUrl) {
-    return path;
-  }
-
-  if (/^https?:\/\//i.test(normalizedBaseUrl)) {
-    const baseWithTrailingSlash = normalizedBaseUrl.endsWith("/") ? normalizedBaseUrl : `${normalizedBaseUrl}/`;
-
-    return `${baseWithTrailingSlash}${path.replace(/^\//, "")}`;
-  }
-
-  const basePath = normalizedBaseUrl.replace(/^\/+|\/+$/g, "");
-  return `/${[basePath, path.replace(/^\/+/, "")].filter(Boolean).join("/")}`;
-}
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
 
 export default function BookingStepper() {
   const defaultGuest = useMemo(() => getDefaultGues(), []);
@@ -192,7 +172,7 @@ export default function BookingStepper() {
       try {
         setIsAvailabilityLoading(true);
 
-        const response = await fetch(buildApiUrl("/api/reservations/table"), {
+        const response = await fetch(`${apiBaseUrl}/api/reservations/table`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -557,7 +537,7 @@ export default function BookingStepper() {
 
     try {
       setIsConfirming(true);
-      const response = await fetch(buildApiUrl("/api/reservations/webapp"), {
+      const response = await fetch(`${apiBaseUrl}/api/reservations/webapp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
