@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import TableSelectionModal from "./TableSelectionModal";
 import ConfirmModal from "./ConfirmModal";
 import GuestSelectionModal from "./GuestSelectionModal";
@@ -11,24 +11,6 @@ interface DateTimeProps {
     phone: string;
   } | null;
   onBack?: () => void;
-}
-
-interface TelegramWebApp {
-  ready: () => void;
-  sendData: (data: string) => void;
-  close: () => void;
-  expand?: () => void;
-  onEvent?: (event: string, handler: () => void) => void;
-  initDataUnsafe?: {
-    user?: {
-      id: number;
-      first_name?: string;
-      last_name?: string;
-      username?: string;
-    };
-    query_id?: string;
-    [key: string]: unknown;
-  };
 }
 
 function DateTime({ bookingType, guestInfo, onBack }: DateTimeProps) {
@@ -49,8 +31,6 @@ function DateTime({ bookingType, guestInfo, onBack }: DateTimeProps) {
   const [reservedTableIds, setReservedTableIds] = useState<Set<string>>(new Set());
   const [filteredTables, setFilteredTables] = useState<Table[]>([]);
   const [timeError, setTimeError] = useState<string>("");
-  
-  const tgRef = useRef<TelegramWebApp | null>(null);
 
   const isTimeInPast = useCallback((date: string, time: string): boolean => {
     const now = new Date();
@@ -231,26 +211,7 @@ function DateTime({ bookingType, guestInfo, onBack }: DateTimeProps) {
   useEffect(() => {
     let mounted = true;
 
-    const initializeApp = async () => {
-      const tg = window.Telegram?.WebApp;
-      
-      if (!tg) {
-        console.log("Режим разработки - Telegram не найден");
-        if (mounted) {
-          loadMockData();
-        }
-        return;
-      }
-
-      tgRef.current = tg;
-      
-      if (tg.expand) {
-        tg.expand();
-      }
-      
-      tg.ready();
-
-      // Получаем данные из URL параметров
+    const initializeApp = () => {
       const urlParams = new URLSearchParams(window.location.search);
       const tablesParam = urlParams.get("tables");
 
@@ -316,22 +277,13 @@ function DateTime({ bookingType, guestInfo, onBack }: DateTimeProps) {
   }, [selectedDate, validateTime]);
 
   const handleSelectTableClick = useCallback(() => {
-    if (!selectedTime) {
-      alert("Пожалуйста, выберите время бронирования.");
-      return;
-    }
     
     if (!validateTime(selectedDate, selectedTime)) {
       return;
     }
     
-    if (filteredTables.length === 0) {
-      alert("На выбранное время нет свободных столов. Пожалуйста, выберите другое время.");
-      return;
-    }
-    
     setShowTableModal(true);
-  }, [selectedTime, selectedDate, filteredTables.length, validateTime]);
+  }, [selectedTime, selectedDate, validateTime]);
 
   const handleTableSelect = useCallback((table: Table) => {
     setSelectedTable(table);
@@ -350,49 +302,10 @@ function DateTime({ bookingType, guestInfo, onBack }: DateTimeProps) {
       return;
     }
     
-    const tg = tgRef.current;
     setShowConfirmModal(false);
 
-    if (!tg) {
-      alert(`Бронь создана!\nСтол: ${selectedTable.number}\nВремя: ${selectedTime}\nДата: ${selectedDate}`);
-      return;
-    }
-
-    // Формируем полные данные для отправки
-    const fullData = {
-      action: "create_reservation",
-      bookingType,
-      guestInfo,
-      tableId: selectedTable.id,         
-      tableNumber: selectedTable.number,
-      guests: guestCount, 
-      time: selectedTime,
-      date: selectedDate,
-      userId: tg.initDataUnsafe?.user?.id,
-      userName: tg.initDataUnsafe?.user?.first_name 
-                || tg.initDataUnsafe?.user?.username,
-      timestamp: new Date().toISOString()
-    };
-
-    console.log("Отправка данных брони:", fullData);
-    
-    try {
-      tg.sendData(JSON.stringify(fullData));
-      
-      // Показываем сообщение об успехе
-      setTimeout(() => {
-        alert(`✅ Бронь стола №${selectedTable.number} подтверждена!\nПриложение закроется через 2 секунды.`);
-        
-        setTimeout(() => {
-          tg.close();
-        }, 2000);
-      }, 500);
-      
-    } catch (error) {
-      console.error("Ошибка отправки данных:", error);
-      alert("Ошибка отправки данных бронирования.");
-    }
-  }, [selectedTable, selectedDate, selectedTime, guestCount, validateTime, bookingType, guestInfo]);
+    onBack?.();
+  }, [selectedTable, selectedDate, selectedTime, guestCount, validateTime, bookingType, guestInfo, onBack]);
 
   const handleTableModalClose = useCallback(() => {
     setShowTableModal(false);

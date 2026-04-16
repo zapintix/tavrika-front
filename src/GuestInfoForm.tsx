@@ -44,7 +44,7 @@ const GuestInfoForm: React.FC<GuestInfoFormProps> = ({ onSubmit, onBack }) => {
       border: "1px solid rgba(255,255,255,0.1)",
       maxWidth: "400px",
       margin: "0 auto",
-      width: "90%"
+      width: "80%"
     }}>
       <button
         onClick={onBack}
@@ -70,7 +70,7 @@ const GuestInfoForm: React.FC<GuestInfoFormProps> = ({ onSubmit, onBack }) => {
         color: "#fff",
         textAlign: "center"
       }}>
-        Данные гостя
+        Контактные данные
       </h2>
 
       <div style={{ marginBottom: "20px" }}>
@@ -87,7 +87,7 @@ const GuestInfoForm: React.FC<GuestInfoFormProps> = ({ onSubmit, onBack }) => {
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Введите имя гостя"
+          placeholder="Введите имя"
           style={{
             padding: "12px 10px",
             borderRadius: "10px",

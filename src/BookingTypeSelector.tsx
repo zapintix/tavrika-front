@@ -14,7 +14,7 @@ const BookingTypeSelector: React.FC<BookingTypeSelectorProps> = ({ onSelect }) =
       border: "1px solid rgba(255,255,255,0.1)",
       maxWidth: "400px",
       margin: "0 auto",
-      width: "90%",
+      width: "80%",
       textAlign: "center"
     }}>
       <h2 style={{ 
