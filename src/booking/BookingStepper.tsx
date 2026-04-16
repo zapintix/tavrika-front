@@ -22,7 +22,7 @@ import {
   validateGuestInfo,
 } from "./utils";
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
+const apiBaseUrl = String(import.meta.env.VITE_API_BASE_URL ?? "").trim().replace(/\/+$/, "");
 
 export default function BookingStepper() {
   const defaultGuest = useMemo(() => getDefaultGues(), []);

@@ -4,6 +4,8 @@ import ConfirmModal from "./ConfirmModal";
 import GuestSelectionModal from "./GuestSelectionModal";
 import type { Table, Section } from "./types/table";
 
+const apiBaseUrl = String(import.meta.env.VITE_API_BASE_URL ?? "").trim().replace(/\/+$/, "");
+
 interface DateTimeProps {
   bookingType?: "self" | "other" | null;
   guestInfo?: {
@@ -158,8 +160,7 @@ function DateTime({ bookingType, guestInfo, onBack }: DateTimeProps) {
 
     const fetchReservedTables = async () => {
       try {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL;
-        const res = await fetch(`${baseUrl}/api/reservations/table`, {
+        const res = await fetch(`${apiBaseUrl}/api/reservations/table`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ 
