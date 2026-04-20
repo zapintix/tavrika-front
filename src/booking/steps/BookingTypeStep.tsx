@@ -101,8 +101,14 @@ export function BookingTypeStep({
             <input
               type="tel"
               value={guestInfo.phone}
-              onChange={(event) => onGuestInfoChange("phone", event.target.value)}
-              placeholder="+7 (900) 123-45-67"
+              onChange={(event) => {
+              let value = event.target.value.replace(/\D/g, '');
+              if (value.length > 11) {
+                value = value.slice(0, 11);
+              }
+              onGuestInfoChange("phone", value);
+            }}
+            placeholder="+7 (900) 123-45-67"
             />
             {guestErrors.phone && <em>{guestErrors.phone}</em>}
           </label>
