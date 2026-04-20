@@ -10,9 +10,11 @@ import { BookingTypeStep } from "./steps/BookingTypeStep";
 import { ConfirmationStep } from "./steps/ConfirmationStep";
 import { DateTimeStep } from "./steps/DateTimeStep";
 import { GuestCountStep } from "./steps/GuestCountStep";
+import { OccasionStep } from "./steps/OccasionStep";
 import { TableStep } from "./steps/TableStep";
 import type { BookingType, GuestInfo, GuestInfoErrors } from "./types";
 import {
+  formatRussianPhoneNumber,
   formatTime,
   getAvailableHours,
   getAvailableMinutes,
@@ -42,6 +44,7 @@ export default function BookingStepper() {
   const [reservedTableIds, setReservedTableIds] = useState<Set<string>>(new Set());
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [guestCount, setGuestCount] = useState<number | null>(null);
+  const [occasion, setOccasion] = useState("");
   const [timeError, setTimeError] = useState("");
   const [tableError, setTableError] = useState("");
   const [guestCountError, setGuestCountError] = useState("");
@@ -108,6 +111,7 @@ export default function BookingStepper() {
 
   const tableLimits = selectedTable ? getGuestLimits(selectedTable.number) : null;
   const currentGuestCount = guestCount ?? tableLimits?.min ?? 0;
+  const normalizedOccasion = occasion.trim();
   const sliderProgress =
     tableLimits && guestCount !== null
       ? tableLimits.max === tableLimits.min
@@ -293,7 +297,7 @@ export default function BookingStepper() {
     ? isStepTwoReady
       ? isStepThreeReady
         ? isStepFourReady
-          ? 4
+          ? STEPS.length - 1
           : 3
         : 2
       : 1
@@ -309,6 +313,7 @@ export default function BookingStepper() {
     setReservedTableIds(new Set());
     setSelectedTable(null);
     setGuestCount(null);
+    setOccasion("");
     setTimeError("");
     setTableError("");
     setGuestCountError("");
@@ -336,9 +341,11 @@ export default function BookingStepper() {
   };
 
   const handleGuestInfoChange = (field: keyof GuestInfo, value: string) => {
+    const nextValue = field === "phone" ? formatRussianPhoneNumber(value) : value;
+
     setGuestInfo((current) => ({
       ...current,
-      [field]: value,
+      [field]: nextValue,
     }));
 
     setGuestErrors((current) => ({
@@ -410,6 +417,10 @@ export default function BookingStepper() {
   const handleGuestCountChange = (value: number) => {
     setGuestCount(value);
     setGuestCountError("");
+  };
+
+  const handleOccasionChange = (value: string) => {
+    setOccasion(value);
   };
 
   const goToStep = (step: number) => {
@@ -508,6 +519,7 @@ export default function BookingStepper() {
       `Время: ${selectedTime}`,
       `Стол: №${selectedTable.number}`,
       `Гостей: ${guestCount}`,
+      `Мероприятие: ${normalizedOccasion}`,
     ].join("\n");
 
     if (!isMaxWebApp) {
@@ -531,6 +543,7 @@ export default function BookingStepper() {
       guestCount,
       tableId: selectedTable.id,
       tableNumber: selectedTable.number,
+      occasion: normalizedOccasion
     };
 
     console.log("[MAX WebApp] Отправка данных брони на backend:", reservationPayload);
@@ -671,7 +684,14 @@ export default function BookingStepper() {
               />
             )}
 
-            {currentStep === 4 && selectedTable && guestCount !== null && (
+            {currentStep === 4 && (
+              <OccasionStep
+                occasion={occasion}
+                onOccasionChange={handleOccasionChange}
+              />
+            )}
+
+            {currentStep === 5 && selectedTable && guestCount !== null && (
               <ConfirmationStep
                 bookingType={bookingType}
                 activeGuestInfo={activeGuestInfo}
@@ -679,6 +699,7 @@ export default function BookingStepper() {
                 selectedTime={selectedTime}
                 selectedTable={selectedTable}
                 guestCount={guestCount}
+                occasion={normalizedOccasion}
               />
             )}
 
