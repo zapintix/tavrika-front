@@ -19,6 +19,10 @@ export const STEPS: StepDefinition[] = [
     caption: "Количество мест",
   },
   {
+    title: "Мероприятие",
+    caption: "Повод встречи",
+  },
+  {
     title: "Подтверждение",
     caption: "Проверка данных",
   },
@@ -37,11 +41,11 @@ export const MOCK_SECTIONS: Section[] = [
       { id: "eccc804d-06e8-4bfe-9a97-6483182be68c", number: 6, name: "", x: 90, y: 640, width: 150, height: 60, borderRadius: 0 },
       { id: "e912a2d8-9aa1-4f55-9bcc-9a99e912f4c8", number: 7, name: "", x: 10, y: 540, width: 150, height: 60, borderRadius: 0 },
       { id: "41429a8a-a77c-4fcb-aab6-d0aaf54700e0", number: 8, name: "", x: 20, y: 20, width: 150, height: 60, borderRadius: 0 },
-      { id: "aa17f2fe-e890-4286-9e48-1827a7f81b0d", number: 9, name: "", x: 120, y: 130, width: 70, height: 50, borderRadius: 0 },
-      { id: "cf6bcd31-42ef-4d3c-b65c-a163ab032903", number: 10, name: "", x: 200, y: 130, width: 70, height: 50, borderRadius: 0 },
-      { id: "b046a8db-c90d-47f5-bf4b-5c6ddbda4445", number: 11, name: "", x: 280, y: 130, width: 70, height: 50, borderRadius: 0 },
-      { id: "51bdf14d-9ca5-42cf-9003-c39473701411", number: 12, name: "", x: 360, y: 130, width: 70, height: 50, borderRadius: 0 },
-      { id: "e4acfa77-2e48-4d6a-8930-e02e657b6d23", number: 13, name: "", x: 360, y: 20, width: 70, height: 50, borderRadius: 0 },
+      { id: "aa17f2fe-e890-4286-9e48-1827a7f81b0d", number: 9, name: "", x: 120, y: 150, width: 70, height: 50, borderRadius: 0 },
+      { id: "cf6bcd31-42ef-4d3c-b65c-a163ab032903", number: 10, name: "", x: 200, y: 150, width: 70, height: 50, borderRadius: 0 },
+      { id: "b046a8db-c90d-47f5-bf4b-5c6ddbda4445", number: 11, name: "", x: 280, y: 150, width: 70, height: 50, borderRadius: 0 },
+      { id: "51bdf14d-9ca5-42cf-9003-c39473701411", number: 12, name: "", x: 300, y: 25, width: 70, height: 50, borderRadius: 0 },
+      { id: "e4acfa77-2e48-4d6a-8930-e02e657b6d23", number: 13, name: "", x: 360, y: 40, width: 70, height: 50, borderRadius: 0 },
     ],
   },
 ];

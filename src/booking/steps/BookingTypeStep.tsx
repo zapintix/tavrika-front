@@ -12,7 +12,6 @@ type BookingTypeStepProps = {
   onGuestInfoChange: (field: keyof GuestInfo, value: string) => void;
   onRequestContact: () => Promise<string | null>;
 };
-
 export function BookingTypeStep({
   bookingType,
   defaultGuestInfo,

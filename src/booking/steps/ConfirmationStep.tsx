@@ -9,6 +9,7 @@ type ConfirmationStepProps = {
   selectedTime: string;
   selectedTable: Table;
   guestCount: number;
+  occasion: string;
 };
 
 export function ConfirmationStep({
@@ -18,6 +19,7 @@ export function ConfirmationStep({
   selectedTime,
   selectedTable,
   guestCount,
+  occasion,
 }: ConfirmationStepProps) {
   return (
     <div className="booking-step-content">
@@ -40,6 +42,10 @@ export function ConfirmationStep({
           <span>Стол</span>
           <strong>№{selectedTable.number}</strong>
           <small>{guestCount} {getGuestWord(guestCount)}</small>
+        </div>
+        <div className="booking-confirm-card">
+          <span>Мероприятие</span>
+          <strong>{occasion || "Не указано"}</strong>
         </div>
       </div>
     </div>
