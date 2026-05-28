@@ -56,6 +56,12 @@ export default function BookingStepper() {
   const [maxWebAppContactError, setMaxWebAppContactError] = useState("");
   const [isContactRequesting, setIsContactRequesting] = useState(false);
 
+    useEffect(() => {
+    if (!isMaxWebApp) {
+      setBookingType("other");
+    }
+  }, [isMaxWebApp]);
+  
   const defaultGuestInfo = useMemo<GuestInfo>(
     () => ({
       name: defaultGuest.name,
