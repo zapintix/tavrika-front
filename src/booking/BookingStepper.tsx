@@ -51,7 +51,7 @@ export default function BookingStepper() {
   const [isLayoutLoading, setIsLayoutLoading] = useState(true);
   const [isAvailabilityLoading, setIsAvailabilityLoading] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
-  const [confirmError, setConfirmError] = useState("");
+  const [confirmError, setConfirmError] = useState<string>("");
   const [maxWebAppPhone, setMaxWebAppPhone] = useState("");
   const [maxWebAppContactError, setMaxWebAppContactError] = useState("");
   const [isContactRequesting, setIsContactRequesting] = useState(false);
@@ -673,9 +673,6 @@ export default function BookingStepper() {
     );
   }
   if (bookingStatus === "error") {
-    console.log(bookingStatus);
-    console.log(32132131231);
-    console.log(confirmError);
     return (
       <div className="booking-stepper">
         <div className="booking-shell booking-shell--centered">
@@ -683,9 +680,7 @@ export default function BookingStepper() {
             <h2 style={{ color: "red" }}>Произошла ошибка брони!</h2>
 
             <p>
-              {typeof confirmError === "object" && confirmError !== null
-                ? confirmError.msg || confirmError.detail || "Пожалуйста, попробуйте позже."
-                : confirmError || "Пожалуйста, попробуйте позже."}
+              {confirmError || "Пожалуйста, попробуйте позже."}
             </p>
 
             <button
