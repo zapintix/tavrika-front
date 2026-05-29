@@ -18,7 +18,7 @@ import {
   formatTime,
   getAvailableHours,
   getAvailableMinutes,
-  getBookingTypeLabel,
+  //getBookingTypeLabel,
   getLocalDateValue,
   getTimeSelectionError,
   validateGuestInfo,
@@ -55,6 +55,7 @@ export default function BookingStepper() {
   const [maxWebAppPhone, setMaxWebAppPhone] = useState("");
   const [maxWebAppContactError, setMaxWebAppContactError] = useState("");
   const [isContactRequesting, setIsContactRequesting] = useState(false);
+  const [bookingStatus, setBookingStatus] = useState<"idle" | "success" | "error">("idle");
 
     useEffect(() => {
     if (!isMaxWebApp) {
@@ -311,7 +312,7 @@ export default function BookingStepper() {
 
   const resetBooking = () => {
     setCurrentStep(0);
-    setBookingType(null);
+    setBookingType(isMaxWebApp ? null : "other");
     setGuestInfo({ name: "", phone: "" });
     setGuestErrors({});
     setSelectedDate(getLocalDateValue());
@@ -516,21 +517,79 @@ export default function BookingStepper() {
       };
     }
 
-    const reservationSummary = [
-      "Бронь создана!",
-      `Формат: ${getBookingTypeLabel(bookingType)}`,
-      `Гость: ${resolvedGuestInfo.name}`,
-      `Телефон: ${resolvedGuestInfo.phone}`,
-      `Дата: ${selectedDate}`,
-      `Время: ${selectedTime}`,
-      `Стол: №${selectedTable.number}`,
-      `Гостей: ${guestCount}`,
-      `Мероприятие: ${normalizedOccasion}`,
-    ].join("\n");
+    // const reservationSummary = [
+    //   "Бронь создана!",
+    //   `Формат: ${getBookingTypeLabel(bookingType)}`,
+    //   `Гость: ${resolvedGuestInfo.name}`,
+    //   `Телефон: ${resolvedGuestInfo.phone}`,
+    //   `Дата: ${selectedDate}`,
+    //   `Время: ${selectedTime}`,
+    //   `Стол: №${selectedTable.number}`,
+    //   `Гостей: ${guestCount}`,
+    //   `Мероприятие: ${normalizedOccasion}`,
+    // ].join("\n");
 
     if (!isMaxWebApp) {
-      alert(reservationSummary);
-      resetBooking();
+      const reservationPayload = {
+        date: selectedDate,
+        time: selectedTime,
+        guests: guestCount,
+        tableId: selectedTable.id,
+        tableNumber: selectedTable.number,
+        guestName: resolvedGuestInfo.name,
+        guestPhone: resolvedGuestInfo.phone,
+        occasion: normalizedOccasion,
+      };
+
+      console.log("[SITE] Отправка данных брони:", reservationPayload);
+
+      try {
+        setIsConfirming(true);
+
+        const response = await fetch(`${apiBaseUrl}/api/reservations/site`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(reservationPayload),
+        });
+
+        if (!response.ok) {
+          let errorMessage = "Не удалось создать бронь.";
+          setBookingStatus("error");
+          try {
+            const errorData = await response.json();
+            errorMessage =
+              errorData.detail ||
+              errorData.message ||
+              errorMessage;
+          } catch {
+            // ignore
+          }
+
+          setConfirmError(errorMessage);
+          return;
+        }
+
+        const result = await response.json();
+
+        console.log("[SITE] Бронь создана:", result);
+
+        setBookingStatus("success");
+        setIsConfirming(false);
+        window.parent.postMessage("close-booking", "*")
+
+      } catch (error) {
+        setBookingStatus("error");
+        console.error("Ошибка отправки брони:", error);
+
+        setConfirmError(
+          "Не удалось отправить бронь. Попробуйте ещё раз."
+        );
+      } finally {
+        setIsConfirming(false);
+      }
+
       return;
     }
 
@@ -590,7 +649,61 @@ export default function BookingStepper() {
       setIsConfirming(false);
     }
   };
+  if (bookingStatus === "success") {
+    return (
+      <div className="booking-stepper">
+        <div className="booking-shell booking-shell--centered">
+          <div className="booking-panel booking-panel--success">
+            <h2>Бронь успешно создана</h2>
 
+            <p>Скоро с вами свяжутся для подтверждения брони.</p>
+
+            <button
+              className="booking-primary-button"
+              onClick={() => {
+                  resetBooking();
+                  setBookingStatus("idle");
+                }}
+            >
+              Создать новую бронь
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (bookingStatus === "error") {
+    console.log(bookingStatus);
+    console.log(32132131231);
+    console.log(confirmError);
+    return (
+      <div className="booking-stepper">
+        <div className="booking-shell booking-shell--centered">
+          <div className="booking-panel booking-panel--error">
+            <h2 style={{ color: "red" }}>Произошла ошибка брони!</h2>
+
+            <p>
+              {typeof confirmError === "object" && confirmError !== null
+                ? confirmError.msg || confirmError.detail || "Пожалуйста, попробуйте позже."
+                : confirmError || "Пожалуйста, попробуйте позже."}
+            </p>
+
+            <button
+              className="booking-primary-button"
+              onClick={() => {
+                setConfirmError("");
+                setBookingStatus("idle")
+              }
+            }
+            >
+              Попробовать снова
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+}
+  
   if (isLayoutLoading) {
     return (
       <div className="booking-stepper">
