@@ -13,7 +13,7 @@ export function OccasionStep({ occasion, onOccasionChange }: OccasionStepProps) 
             type="text"
             value={occasion}
             onChange={(event) => onOccasionChange(event.target.value)}
-            placeholder="Например, день рождения, свидание или деловая встреча (опционально)"
+            placeholder="Например, день рождения, свидание или деловая встреча (по желанию)"
           />
         </label>
       </div>

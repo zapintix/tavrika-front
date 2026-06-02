@@ -738,7 +738,10 @@ export default function BookingStepper() {
             <div className="booking-panel__header">
               <div>
                 <span className="booking-panel__eyebrow">Шаг {currentStep + 1}</span>
-                <h2>{STEPS[currentStep].title}</h2>
+                {currentStep !==0 && (
+                  <h2>{STEPS[currentStep].title}</h2>
+                )}
+                
               </div>
               <p>{STEPS[currentStep].caption}</p>
             </div>

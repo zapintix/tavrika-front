@@ -1,6 +1,6 @@
 import type { Table } from "../../types/table";
 import type { BookingType, GuestInfo } from "../types";
-import { formatBookingDate, getBookingTypeLabel, getGuestWord } from "../utils";
+import { formatBookingDate, getGuestWord } from "../utils";
 
 type ConfirmationStepProps = {
   bookingType: BookingType | null;
@@ -13,7 +13,6 @@ type ConfirmationStepProps = {
 };
 
 export function ConfirmationStep({
-  bookingType,
   activeGuestInfo,
   selectedDate,
   selectedTime,
@@ -24,10 +23,6 @@ export function ConfirmationStep({
   return (
     <div className="booking-step-content">
       <div className="booking-confirm-grid">
-        <div className="booking-confirm-card">
-          <span>Тип брони</span>
-          <strong>{getBookingTypeLabel(bookingType)}</strong>
-        </div>
         <div className="booking-confirm-card">
           <span>Гость</span>
           <strong>{activeGuestInfo.name}</strong>
