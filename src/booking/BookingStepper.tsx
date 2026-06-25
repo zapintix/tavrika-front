@@ -656,7 +656,7 @@ export default function BookingStepper() {
           <div className="booking-panel booking-panel--success">
             <h2>Бронь успешно создана</h2>
 
-            <p>Скоро с вами свяжутся для подтверждения брони.</p>
+            <p>Скоро с вами свяжется администратор для подтверждения вашего бронирования.</p>
 
             <button
               className="booking-primary-button"
