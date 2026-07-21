@@ -14,7 +14,6 @@ import { OccasionStep } from "./steps/OccasionStep";
 import { TableStep } from "./steps/TableStep";
 import type { BookingType, GuestInfo, GuestInfoErrors } from "./types";
 import {
-  formatRussianPhoneNumber,
   formatTime,
   getAvailableHours,
   getAvailableMinutes,

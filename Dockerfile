@@ -9,10 +9,9 @@ ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 ENV PNPM_CONFIG_MINIMUM_RELEASE_AGE=0
 
 # зависимости отдельно (кешируются)
-COPY package.json pnpm-lock.yaml ./
+COPY package*.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-# Убрал что бы хоть как то залилось
-# RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # копируем исходники
 COPY . .
