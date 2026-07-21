@@ -348,7 +348,7 @@ export default function BookingStepper() {
   };
 
   const handleGuestInfoChange = (field: keyof GuestInfo, value: string) => {
-    const nextValue = field === "phone" ? formatRussianPhoneNumber(value) : value;
+    const nextValue = value 
 
     setGuestInfo((current) => ({
       ...current,

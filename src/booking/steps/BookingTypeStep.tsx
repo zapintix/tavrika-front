@@ -1,4 +1,5 @@
 import type { BookingType, GuestInfo, GuestInfoErrors } from "../types";
+import { IMaskInput } from 'react-imask';
 
 type BookingTypeStepProps = {
   bookingType: BookingType | null;
@@ -46,19 +47,18 @@ export function BookingTypeStep({
       <label className="booking-field">
         <span>Телефон гостя</span>
 
-        <input
-          type="tel"
+        <IMaskInput
+          mask="+7 (000) 000-00-00" 
+          lazy={true} 
           value={guestInfo.phone}
-          onChange={(event) => {
-            let value = event.target.value.replace(/\D/g, "");
-
-            if (value.length > 11) {
-              value = value.slice(0, 11);
-            }
-
-            onGuestInfoChange("phone", value);
+          unmask={false}
+          onAccept={(value) => onGuestInfoChange("phone", value)}
+          prepare={(str, maskRef) => {
+            if (maskRef.value === '' && str === '8') return '7';
+            return str;
           }}
-          placeholder="+7 (900) 123-45-67"
+          placeholder="+7 (___) ___-__-__"
+          type="tel"
         />
 
         {guestErrors.phone && <em>{guestErrors.phone}</em>}
